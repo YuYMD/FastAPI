@@ -11,12 +11,12 @@ import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-#追加1
-import logging
+#追加
 logger = logging.getLogger(__name__)
 
-#追加2
-from fastapi.middleware.cors import CORSMiddleware
+load_dotenv(".env")
+
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,10 +25,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-load_dotenv(".env")
-
-app = FastAPI()
 
 # MongoDB setup
 mongo_uri = os.environ['MONGO_AUTH']
