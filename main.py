@@ -43,19 +43,35 @@ class LeadSchema(BaseModel):
 
 
 def send_email(subject, message, to_address):
-    # Your send_email logic, unchanged from before
-    from_address = 'ryan@smartbids.ai'
-    password = os.getenv("EMAIL_PASS")
+    try:
+        from_address = os.environ["YOUR_EMAIL"]
+        password = os.environ["YOUR_EMAIL_PASS"]
+    except KeyError as e:
+        logger.error(f"環境変数が設定されていません: {e}")
+        raise HTTPException(status_code=500, detail=f"メール設定エラー: {e}")
+
     msg = MIMEMultipart()
     msg['From'] = "SmartBids.ai - Email verification <" + from_address + ">"
     msg['To'] = to_address
     msg['Subject'] = subject
     msg.attach(MIMEText(message, 'html'))
-    server = smtplib.SMTP_SSL('mail.privateemail.com', 465)
-    server.login(from_address, password)
-    text = msg.as_string()
-    server.sendmail(from_address, to_address, text)
-    server.quit()
+
+    try:
+        # Gmail SMTP
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.login(from_address, password)
+        text = msg.as_string()
+        server.sendmail(from_address, to_address, text)
+        server.quit()
+    except smtplib.SMTPAuthenticationError:
+        logger.error("SMTP認証エラー")
+        raise HTTPException(status_code=500, detail="メール送信の認証に失敗しました")
+    except smtplib.SMTPException as e:
+        logger.error(f"SMTP例外: {e}")
+        raise HTTPException(status_code=500, detail=f"メール送信エラー: {e}")
+    except Exception as e:
+        logger.error(f"予期せぬエラー: {e}")
+        raise HTTPException(status_code=500, detail=f"メール送信中に予期せぬエラーが発生しました: {e}")
 
 
 @app.post("/create_lead")
