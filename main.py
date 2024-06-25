@@ -21,7 +21,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 本番環境では適切なオリジンに制限してください
+    allow_origins=["https://saas-production-acfa.up.railway.app/"],  # 本番環境では適切なオリジンに制限してください
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
