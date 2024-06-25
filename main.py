@@ -202,3 +202,12 @@ async def verify_client(token: str, email: str, phone: Optional[str] = None, db_
 
     raise HTTPException(status_code=400, detail="Invalid token or email")
 
+@app.get("/test_db_connection")
+async def test_db_connection():
+    try:
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+        client.server_info()
+        return {"message": "Database connection successful"}
+    except Exception as e:
+        logger.error(f"データベース接続エラー: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"データベース接続エラー: {str(e)}")
