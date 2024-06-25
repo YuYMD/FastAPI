@@ -158,7 +158,7 @@ async def send_verification(email: EmailSchema):
             msg = f'''
             <p>SmartBids.aiへようこそ！</p>
             <p>以下のリンクをクリックしてメールアドレスを認証してください：</p>
-            <a href="{email_base_url}/verify_client?token={token}&email={quote(email.email)}&db_type=users">メールアドレスを認証</a>
+            <a href="{email_base_url.rstrip('/')}/verify_client?token={token}&email={quote(email.email)}&db_type=users">メールアドレスを認証</a>
             <p>ありがとうございます。</p>
             <p>SmartBids.aiチーム</p>
             '''
