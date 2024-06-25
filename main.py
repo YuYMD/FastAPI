@@ -11,10 +11,20 @@ import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-#追加
+#追加1
 import logging
 logger = logging.getLogger(__name__)
 
+#追加2
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 本番環境では適切なオリジンに制限してください
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 load_dotenv(".env")
 
