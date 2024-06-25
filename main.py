@@ -11,6 +11,11 @@ import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
+#追加
+import logging
+logger = logging.getLogger(__name__)
+
+
 load_dotenv(".env")
 
 app = FastAPI()
@@ -92,35 +97,60 @@ async def create_lead(lead: LeadSchema):
 
 @app.post("/send_verification")
 async def send_verification(email: EmailSchema):
-    token = secrets.token_hex(20)
-    existing_user = users_collection.find_one({'email': email.email})
+    try:
+        # データベース接続のチェック
+        try:
+            client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+            client.server_info()
+        except Exception as e:
+            logger.error(f"データベース接続エラー: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"データベース接続エラー: {str(e)}")
 
-    if existing_user:
-        if existing_user.get('verified', False):
-            return {"message": "Email is already verified"}
+        token = secrets.token_hex(20)
+        existing_user = users_collection.find_one({'email': email.email})
 
-        users_collection.update_one(
-            {'_id': existing_user['_id']},
-            {
-                "$set": {
-                    "token": token,
-                    "verified": False
+        if existing_user:
+            if existing_user.get('verified', False):
+                return {"message": "このメールアドレスは既に認証済みです"}
+
+            users_collection.update_one(
+                {'_id': existing_user['_id']},
+                {
+                    "$set": {
+                        "token": token,
+                        "verified": False
+                    }
                 }
-            }
-        )
-    else:
-        users_collection.insert_one({
-            "email": email.email,
-            "token": token,
-            "verified": False
-        })
+            )
+        else:
+            users_collection.insert_one({
+                "email": email.email,
+                "token": token,
+                "verified": False
+            })
 
-    # [Rest of your email generation and sending logic]
-    msg = f'<p>Welcome to SmartBids.ai!</p><p>Please click on the following link to verify your email:</p><a href="{email_base_url}/verify_client?token={token}&email={quote(email.email)}&db_type=users">Verify Email</a><p>Thank you,</p><p>SmartBids.ai Team</p>'
-    subject = 'Email verification'
-    send_email(subject, msg, email.email)
+        # メール送信のチェック
+        try:
+            msg = f'''
+            <p>SmartBids.aiへようこそ！</p>
+            <p>以下のリンクをクリックしてメールアドレスを認証してください：</p>
+            <a href="{email_base_url}/verify_client?token={token}&email={quote(email.email)}&db_type=users">メールアドレスを認証</a>
+            <p>ありがとうございます。</p>
+            <p>SmartBids.aiチーム</p>
+            '''
+            subject = 'メールアドレス認証'
+            send_email(subject, msg, email.email)
+        except Exception as e:
+            logger.error(f"メール送信エラー: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"メール送信エラー: {str(e)}")
 
-    return {"message": "Verification email sent"}
+        return {"message": "認証メールを送信しました"}
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"予期せぬエラー: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"予期せぬエラーが発生しました: {str(e)}")
 
 
 @app.get("/verify_client", response_class=HTMLResponse)
