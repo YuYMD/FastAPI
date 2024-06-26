@@ -1,5 +1,5 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException, Response, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from urllib.parse import quote
@@ -10,23 +10,15 @@ import secrets
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
-import logging
-from fastapi.middleware.cors import CORSMiddleware
 
+#追加
+import logging
 logger = logging.getLogger(__name__)
+
 
 load_dotenv(".env")
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://saas-production-acfa.up.railway.app"],  # 本番環境では適切なオリジンに制限してください
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
 # MongoDB setup
 mongo_uri = os.environ['MONGO_AUTH']
@@ -158,7 +150,7 @@ async def send_verification(email: EmailSchema):
             msg = f'''
             <p>SmartBids.aiへようこそ！</p>
             <p>以下のリンクをクリックしてメールアドレスを認証してください：</p>
-            <a href="{email_base_url.rstrip('/')}/verify_client?token={token}&email={quote(email.email)}&db_type=users">メールアドレスを認証</a>
+            <a href="{email_base_url}/verify_client?token={token}&email={quote(email.email)}&db_type=users">メールアドレスを認証</a>
             <p>ありがとうございます。</p>
             <p>SmartBids.aiチーム</p>
             '''
